@@ -38,7 +38,7 @@ class TrayApp:
     @staticmethod
     def testar_porta(porta):
         try:
-            PrinterEngine.enviar(porta, b"SIZE 105 mm, 22 mm\nGAP 2 mm, 0\nDIRECTION 1\nCLS\nTEXT 50,50,\"3\",0,1,1,\"TESTE\"\nPRINT 1\n")
+            PrinterEngine.enviar(porta, b"SIZE 105 mm, 22 mm\nGAP 2 mm, 0\nDIRECTION 1\nCLS\nTEXT 50,50,\"3\",0,1,1,\"TESTE\"\nTEXT 330,50,\"3\",0,1,1,\"TESTE\"\nTEXT 610,50,\"3\",0,1,1,\"TESTE\"\nPRINT 1\n")
             messagebox.showinfo("Sucesso", "Teste enviado!")
         except Exception as e:
             messagebox.showerror("Erro", str(e))
