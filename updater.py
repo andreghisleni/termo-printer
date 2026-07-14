@@ -1,7 +1,7 @@
 import os
 import sys
 import subprocess
-import requests # O urllib foi removido!
+import requests
 
 from config import VERSAO_ATUAL, REPO_GITHUB
 
@@ -29,7 +29,6 @@ class AutoUpdater:
             dados = resposta.json()
             versao_remota = dados.get("tag_name")
 
-            # Se achou versão nova e diferente da atual
             if versao_remota and versao_remota != VERSAO_ATUAL:
                 url_download = next((a["browser_download_url"] for a in dados.get("assets", []) if a["name"] == "Agente_Impressao.exe"), None)
                 if not url_download: return
@@ -37,28 +36,51 @@ class AutoUpdater:
                 if fn_notificar:
                     fn_notificar(f"Baixando versão {versao_remota} em segundo plano...", "Atualização Encontrada!")
 
-                nome_exe_atual = os.path.basename(sys.executable)
-                nome_exe_novo = "update_temp.exe"
+                # 1. PEGANDO O CAMINHO EXATO DO ARQUIVO
+                caminho_exe_atual = sys.executable
+                pasta_base = os.path.dirname(caminho_exe_atual)
+                nome_exe = os.path.basename(caminho_exe_atual)
                 
-                # ==========================================
-                # CORREÇÃO: Usando 'requests' para baixar e contornar erro de SSL
-                # ==========================================
+                caminho_novo_exe = os.path.join(pasta_base, "update_temp.exe")
+                caminho_bat = os.path.join(pasta_base, "atualizar.bat")
+                
+                # Baixando o arquivo
                 resposta_download = requests.get(url_download, stream=True)
-                resposta_download.raise_for_status() # Verifica se a URL é válida
+                resposta_download.raise_for_status()
                 
-                with open(nome_exe_novo, 'wb') as arquivo:
+                with open(caminho_novo_exe, 'wb') as arquivo:
                     for chunk in resposta_download.iter_content(chunk_size=8192):
                         arquivo.write(chunk)
-                # ==========================================
+                        
+                # 2. CHECAGEM DE INTEGRIDADE: Evita instalar um arquivo corrompido (menor que 5MB)
+                if os.path.getsize(caminho_novo_exe) < 5 * 1024 * 1024:
+                    if fn_notificar:
+                        fn_notificar("O arquivo baixado parece corrompido. Atualização abortada.", "Erro no Download")
+                    return
 
-                script_bat = f"""@echo off\ntimeout /t 3 /nobreak > NUL\ndel "{nome_exe_atual}"\nren "{nome_exe_novo}" "{nome_exe_atual}"\nstart "" "{nome_exe_atual}"\ndel "%~f0"\n"""
-                with open("atualizar.bat", "w") as bat_file:
+                # 3. O SCRIPT DE BAT BLINDADO (Com loop infinito até liberar o arquivo)
+                script_bat = f"""@echo off
+cd /d "{pasta_base}"
+
+:aguardar
+timeout /t 1 /nobreak > NUL
+del "{nome_exe}" > NUL 2>&1
+if exist "{nome_exe}" goto aguardar
+
+ren "update_temp.exe" "{nome_exe}"
+start "" "{nome_exe}"
+del "%~f0"
+"""
+                with open(caminho_bat, "w", encoding="utf-8") as bat_file:
                     bat_file.write(script_bat)
 
                 if fn_notificar:
                     fn_notificar("O aplicativo será reiniciado para aplicar a nova versão.", "Atualização Concluída")
 
-                subprocess.Popen("atualizar.bat", shell=True)
+                # Executa o .bat informando de qual diretório ele deve partir
+                subprocess.Popen(f'"{caminho_bat}"', shell=True, cwd=pasta_base)
+                
+                # Mata o processo atual para o .bat assumir
                 os._exit(0)
                 
             else:
