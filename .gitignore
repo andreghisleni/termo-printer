@@ -1,1 +1,4 @@
 config_impressora.json
+
+__pycache__/
+*.pyc

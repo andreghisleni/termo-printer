@@ -3,13 +3,11 @@ name: Gerar Executavel e Release Windows
 on:
   push:
     tags:
-      - 'v*' # Roda apenas quando você enviar uma tag que comece com "v" (ex: v1.0.0)
+      - 'v*'
 
 jobs:
   build-and-release:
     runs-on: windows-latest
-    
-    # Permissão OBRIGATÓRIA para o bot do GitHub poder criar a Release
     permissions:
       contents: write 
 
@@ -27,14 +25,18 @@ jobs:
         python -m pip install --upgrade pip
         pip install fastapi uvicorn pydantic pystray pillow pywin32 requests pyinstaller
 
+    - name: Injetar a Versão no Código Python
+      run: |
+        python -c "codigo = open('config.py', encoding='utf-8').read(); open('config.py', 'w', encoding='utf-8').write(codigo.replace('DEV_VERSION', '${{ github.ref_name }}'))"
+
     - name: Gerar o EXE
       run: |
-        pyinstaller --onefile --noconsole --name "Agente_Impressao" servidor_impressao.py
+        pyinstaller --onefile --noconsole --name "Agente_Impressao" main.py
 
     - name: Publicar Release Oficial
       uses: softprops/action-gh-release@v2
       with:
-        files: dist/Agente_Impressao.exe # Pega o arquivo gerado e anexa na Release
-        generate_release_notes: true # Cria um textinho automático com o que mudou no código
+        files: dist/Agente_Impressao.exe
+        generate_release_notes: true
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
