@@ -1,8 +1,7 @@
 import os
 import sys
-import urllib.request
 import subprocess
-import requests
+import requests # O urllib foi removido!
 
 from config import VERSAO_ATUAL, REPO_GITHUB
 
@@ -17,7 +16,7 @@ class AutoUpdater:
             if VERSAO_ATUAL == "DEV_VERSION":
                 if fn_notificar and not silencioso:
                     fn_notificar("Atualização ignorada. Você está rodando via código-fonte.", "Modo Desenvolvedor")
-                return # Interrompe a busca aqui para poupar internet
+                return 
                 
             url_api = f"https://api.github.com/repos/{REPO_GITHUB}/releases/latest"
             resposta = requests.get(url_api, timeout=5)
@@ -40,7 +39,17 @@ class AutoUpdater:
 
                 nome_exe_atual = os.path.basename(sys.executable)
                 nome_exe_novo = "update_temp.exe"
-                urllib.request.urlretrieve(url_download, nome_exe_novo)
+                
+                # ==========================================
+                # CORREÇÃO: Usando 'requests' para baixar e contornar erro de SSL
+                # ==========================================
+                resposta_download = requests.get(url_download, stream=True)
+                resposta_download.raise_for_status() # Verifica se a URL é válida
+                
+                with open(nome_exe_novo, 'wb') as arquivo:
+                    for chunk in resposta_download.iter_content(chunk_size=8192):
+                        arquivo.write(chunk)
+                # ==========================================
 
                 script_bat = f"""@echo off\ntimeout /t 3 /nobreak > NUL\ndel "{nome_exe_atual}"\nren "{nome_exe_novo}" "{nome_exe_atual}"\nstart "" "{nome_exe_atual}"\ndel "%~f0"\n"""
                 with open("atualizar.bat", "w") as bat_file:
