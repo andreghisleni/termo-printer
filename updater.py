@@ -77,10 +77,18 @@ del "%~f0"
                 if fn_notificar:
                     fn_notificar("O aplicativo será reiniciado para aplicar a nova versão.", "Atualização Concluída")
 
-                # Executa o .bat informando de qual diretório ele deve partir
-                subprocess.Popen(f'"{caminho_bat}"', shell=True, cwd=pasta_base)
+                # ==========================================
+                # A MÁGICA: Limpar a "herança" do PyInstaller
+                # ==========================================
+                env_limpo = os.environ.copy()
+                env_limpo.pop("MEIPASS", None)
+                env_limpo.pop("_MEIPASS", None)
+                env_limpo.pop("_MEIPASS2", None)
+
+                # Executa o .bat informando a pasta e passando o ambiente LIMPO
+                subprocess.Popen(f'"{caminho_bat}"', shell=True, cwd=pasta_base, env=env_limpo)
                 
-                # Mata o processo atual para o .bat assumir
+                # Mata o processo atual
                 os._exit(0)
                 
             else:
