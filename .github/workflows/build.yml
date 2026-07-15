@@ -1,4 +1,4 @@
-name: Gerar Executavel e Release Windows
+name: Gerar Instalador Windows
 
 on:
   push:
@@ -25,18 +25,23 @@ jobs:
         python -m pip install --upgrade pip
         pip install fastapi uvicorn pydantic pystray pillow pywin32 requests pyinstaller
 
-    - name: Injetar a Versão no Código Python
+    - name: Injetar a Versão no Código Python e no Instalador
       run: |
         python -c "codigo = open('config.py', encoding='utf-8').read(); open('config.py', 'w', encoding='utf-8').write(codigo.replace('DEV_VERSION', '${{ github.ref_name }}'))"
+        python -c "codigo = open('setup.iss', encoding='utf-8').read(); open('setup.iss', 'w', encoding='utf-8').write(codigo.replace('DEV_VERSION', '${{ github.ref_name }}'))"
 
-    - name: Gerar o EXE
+    - name: Compilar App (Formato Pasta)
       run: |
-        pyinstaller --onefile --noconsole --name "Agente_Impressao" main.py
+        pyinstaller --noconsole --name "Agente_Impressao" main.py
+
+    - name: Gerar Instalador (Inno Setup)
+      run: |
+        iscc setup.iss
 
     - name: Publicar Release Oficial
       uses: softprops/action-gh-release@v2
       with:
-        files: dist/Agente_Impressao.exe
+        files: Output/Instalador_Agente_Impressao.exe
         generate_release_notes: true
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
