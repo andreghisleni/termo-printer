@@ -23,11 +23,11 @@ def api_imprimir(request: RequestImpressao):
         "textos": [
             {"tipo": "simples", "campo": "id", "x_mm": 0.5, "y_mm": 0.0, "fonte": "3", "bold": 0},
             {"tipo": "simples", "campo": "codigo", "x_mm": 1.0, "y_mm": -9.0, "fonte": "1", "bold": 0},
-            {"tipo": "bloco_inteligente", "campo": "nome", "x_mm": 4.0, "y_mm": 0.0, "passo_x_mm": 3.5, "fonte_normal": "2", "max_chars_normal": 11, "fonte_pequena": "1", "max_chars_pequena": 28, "bold": 0},
-            {"tipo": "simples", "campo": "status", "x_mm": 12, "y_mm": 0.0, "fonte": "3", "bold": 1},
-            {"tipo": "simples", "campo": "ref", "x_mm": 15.0, "y_mm": 0.0, "fonte": "1", "bold": 0},
+            {"tipo": "bloco_inteligente", "campo": "nome", "x_mm": 4.0, "y_mm": 0.0, "passo_x_mm": 3.0, "fonte_normal": "2", "max_chars_normal": 11, "fonte_pequena": "1", "max_chars_pequena": 28, "bold": 0},
+            {"tipo": "simples", "campo": "status", "x_mm": 9, "y_mm": 0.0, "fonte": "3", "bold": 1},
+            {"tipo": "simples", "campo": "ref", "x_mm": 12.5, "y_mm": 0.0, "fonte": "1", "bold": 0},
         ],
-        "qrcode": {"campo": "qr_data", "x_mm": 18.0, "y_mm": 5.5, "tamanho": 4, "rotacao": 0}
+        "qrcode": {"campo": "qr_data", "x_mm": 15.0, "y_mm": 2.5, "tamanho": 6, "rotacao": 0}
     }
     
     dados = [e.dict() for e in request.etiquetas]
