@@ -36,6 +36,7 @@ Source: "dist\Agente_Impressao\*"; DestDir: "{app}"; Flags: ignoreversion recurs
 [Icons]
 Name: "{autoprograms}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
 Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
+Name: "{autostartup}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
 
 [Run]
 ; Quando atualizado via código (silencioso), forçamos o aplicativo a abrir sozinho no final
