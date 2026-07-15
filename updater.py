@@ -54,9 +54,6 @@ class AutoUpdater:
                         fn_notificar("O arquivo baixado parece corrompido. Atualização abortada.", "Erro no Download")
                     return
 
-                # ==========================================
-                # O SCRIPT DE BAT BLINDADO (Com limpeza de cache)
-                # ==========================================
                 script_bat = f"""@echo off
 cd /d "{pasta_base}"
 
@@ -66,13 +63,6 @@ del "{nome_exe}" > NUL 2>&1
 if exist "{nome_exe}" goto aguardar
 
 ren "update_temp.exe" "{nome_exe}"
-
-:: MATA A HERANÇA DO PYINSTALLER DIRETAMENTE NO CMD DO WINDOWS
-set _MEIPASS=
-set _MEIPASS2=
-set MEIPASS=
-set MEIPASS2=
-
 start "" "{nome_exe}"
 del "%~f0"
 """
@@ -82,7 +72,27 @@ del "%~f0"
                 if fn_notificar:
                     fn_notificar("O aplicativo será reiniciado para aplicar a nova versão.", "Atualização Concluída")
 
-                subprocess.Popen(f'"{caminho_bat}"', shell=True, cwd=pasta_base)
+                # ==========================================
+                # O CORTA-LAÇOS DO PYINSTALLER
+                # ==========================================
+                # 1. Varre e apaga qualquer rastro do PyInstaller da memória
+                env_limpo = os.environ.copy()
+                chaves_para_remover = [k for k in env_limpo if "MEIPASS" in k.upper()]
+                for k in chaves_para_remover:
+                    env_limpo.pop(k)
+
+                # 2. Flag oficial do Windows para "Desanexar Processo" (DETACHED_PROCESS)
+                DETACHED_PROCESS = 0x00000008
+
+                # 3. Executa o .bat livre, leve e solto
+                subprocess.Popen(
+                    f'"{caminho_bat}"',
+                    shell=True,
+                    cwd=pasta_base,
+                    env=env_limpo,
+                    creationflags=DETACHED_PROCESS
+                )
+                
                 os._exit(0)
                 
             else:
