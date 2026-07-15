@@ -18,6 +18,7 @@ class RequestImpressao(BaseModel): etiquetas: List[EtiquetaData]
 def api_imprimir(request: RequestImpressao):
     porta = ConfigManager.carregar().get("porta")
     if not porta: raise HTTPException(status_code=400, detail="Impressora não configurada.")
+    etiquetas_por_envio = 60
     
     layout = {
         "textos": [
@@ -32,10 +33,20 @@ def api_imprimir(request: RequestImpressao):
     
     dados = [e.dict() for e in request.etiquetas]
     try:
+        lote_comandos = []
+        etiquetas_no_lote = 0
         for i in range(0, len(dados), 3):
-            bytes_tspl = LabelBuilder.gerar_etiqueta_padrao(dados[i:i+3], layout)
-            PrinterEngine.enviar(porta, bytes_tspl)
-            time.sleep(0.5) 
+            fatia = dados[i:i+3]
+            bytes_tspl = LabelBuilder.gerar_etiqueta_padrao(fatia, layout)
+            lote_comandos.append(bytes_tspl)
+            etiquetas_no_lote += len(fatia)
+
+            # Dispara envio por quantidade de etiquetas (nao por linhas de 3).
+            if (etiquetas_no_lote >= etiquetas_por_envio) or (i + 3 >= len(dados)):
+                PrinterEngine.enviar(porta, b"".join(lote_comandos))
+                lote_comandos.clear()
+                etiquetas_no_lote = 0
+                time.sleep(0.5)
         return {"status": "sucesso"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
