@@ -12,7 +12,6 @@ class AutoUpdater:
             if fn_notificar and not silencioso:
                 fn_notificar("Procurando por novas versões no servidor...", "Buscando Atualização")
                 
-            # Trava visual para o Modo de Desenvolvimento
             if VERSAO_ATUAL == "DEV_VERSION":
                 if fn_notificar and not silencioso:
                     fn_notificar("Atualização ignorada. Você está rodando via código-fonte.", "Modo Desenvolvedor")
@@ -36,7 +35,6 @@ class AutoUpdater:
                 if fn_notificar:
                     fn_notificar(f"Baixando versão {versao_remota} em segundo plano...", "Atualização Encontrada!")
 
-                # 1. PEGANDO O CAMINHO EXATO DO ARQUIVO
                 caminho_exe_atual = sys.executable
                 pasta_base = os.path.dirname(caminho_exe_atual)
                 nome_exe = os.path.basename(caminho_exe_atual)
@@ -44,7 +42,6 @@ class AutoUpdater:
                 caminho_novo_exe = os.path.join(pasta_base, "update_temp.exe")
                 caminho_bat = os.path.join(pasta_base, "atualizar.bat")
                 
-                # Baixando o arquivo
                 resposta_download = requests.get(url_download, stream=True)
                 resposta_download.raise_for_status()
                 
@@ -52,13 +49,14 @@ class AutoUpdater:
                     for chunk in resposta_download.iter_content(chunk_size=8192):
                         arquivo.write(chunk)
                         
-                # 2. CHECAGEM DE INTEGRIDADE: Evita instalar um arquivo corrompido (menor que 5MB)
                 if os.path.getsize(caminho_novo_exe) < 5 * 1024 * 1024:
                     if fn_notificar:
                         fn_notificar("O arquivo baixado parece corrompido. Atualização abortada.", "Erro no Download")
                     return
 
-                # 3. O SCRIPT DE BAT BLINDADO (Com loop infinito até liberar o arquivo)
+                # ==========================================
+                # O SCRIPT DE BAT BLINDADO (Com limpeza de cache)
+                # ==========================================
                 script_bat = f"""@echo off
 cd /d "{pasta_base}"
 
@@ -68,6 +66,13 @@ del "{nome_exe}" > NUL 2>&1
 if exist "{nome_exe}" goto aguardar
 
 ren "update_temp.exe" "{nome_exe}"
+
+:: MATA A HERANÇA DO PYINSTALLER DIRETAMENTE NO CMD DO WINDOWS
+set _MEIPASS=
+set _MEIPASS2=
+set MEIPASS=
+set MEIPASS2=
+
 start "" "{nome_exe}"
 del "%~f0"
 """
@@ -77,18 +82,7 @@ del "%~f0"
                 if fn_notificar:
                     fn_notificar("O aplicativo será reiniciado para aplicar a nova versão.", "Atualização Concluída")
 
-                # ==========================================
-                # A MÁGICA: Limpar a "herança" do PyInstaller
-                # ==========================================
-                env_limpo = os.environ.copy()
-                env_limpo.pop("MEIPASS", None)
-                env_limpo.pop("_MEIPASS", None)
-                env_limpo.pop("_MEIPASS2", None)
-
-                # Executa o .bat informando a pasta e passando o ambiente LIMPO
-                subprocess.Popen(f'"{caminho_bat}"', shell=True, cwd=pasta_base, env=env_limpo)
-                
-                # Mata o processo atual
+                subprocess.Popen(f'"{caminho_bat}"', shell=True, cwd=pasta_base)
                 os._exit(0)
                 
             else:
